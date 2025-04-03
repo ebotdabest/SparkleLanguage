@@ -5,6 +5,7 @@ def get_tokens(source: str) -> List[str]:
     tokens = []
     lexeme = ''
     i = 0
+
     while i < len(source):
         c = source[i]
 
@@ -16,11 +17,18 @@ def get_tokens(source: str) -> List[str]:
             continue
 
         if c == '"':
+            if lexeme:
+                tokens.append(lexeme)
+                lexeme = ''
             end = i + 1
             while end < len(source) and source[end] != '"':
                 end += 1
-            tokens.append(source[i:end+1])
-            i = end + 1
+            if end < len(source):
+                tokens.append(source[i:end+1])
+                i = end + 1
+            else:
+                tokens.append(source[i:])
+                i = len(source)
             continue
 
         matched = False

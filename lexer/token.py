@@ -7,17 +7,37 @@ BASIC_KEYWORDS = [
     "=",
     "(",
     ")",
-    ","
+    ",",
+    "->",
+    "{",
+    "}",
+    "&&",
+    "||",
+    "[",
+    "]"
+]
+
+OTHER_KEYWORDS = [
+    "void",
+    "class"
 ]
 
 VARIABLE_DECLARTOR = ["var"]
 MUTABLE_DECLATOR = ["const"]
-VARIABLE_MODIFIERS = [
-    "nonlocal",
-    "private",
-    "public",
-    "local"
+
+BUILTIN_TYPES = [
+    "stringstr",
+    "stringchar",
+    "int"
 ]
 
-VARIABLE_SHIT = (*VARIABLE_MODIFIERS, *MUTABLE_DECLATOR, *VARIABLE_DECLARTOR)
-KEYWORDS = BASIC_KEYWORDS + VARIABLE_DECLARTOR + VARIABLE_MODIFIERS + MUTABLE_DECLATOR
+RETURN_MODIFIERS = [
+    "useless"
+]
+
+BUILTIN_FUNCTIONS = [
+    "print"
+]
+
+VARIABLE_SHIT = (*MUTABLE_DECLATOR, *VARIABLE_DECLARTOR)
+KEYWORDS = (BASIC_KEYWORDS + VARIABLE_DECLARTOR + MUTABLE_DECLATOR + RETURN_MODIFIERS)
