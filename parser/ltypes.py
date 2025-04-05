@@ -44,8 +44,14 @@ class BinaryOP:
     def __str__(self):
         return f"left: [{str(self.left)}]; right: [{str(self.right)}]; operator: {self.operator}"
 
+@auto_str()
+class FuncCall:
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+
 class VarDeclr:
-    def __init__(self, name, value: Constant | VariableRefrence | BinaryOP, is_mutable: bool):
+    def __init__(self, name, value: Constant | VariableRefrence | BinaryOP | FuncCall, is_mutable: bool):
         self.name: str = name
         self.value: Constant | VariableRefrence | BinaryOP = value
         self.is_mutable: bool = is_mutable
@@ -68,11 +74,7 @@ class FuncArg:
         self.name = name
         self.tpe = tpe
 
-@auto_str()
-class FuncCall:
-    def __init__(self, name, args):
-        self.name = name
-        self.args = args
+
 
 class ReturnValue:
     def __init__(self, v):

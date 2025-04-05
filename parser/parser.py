@@ -69,6 +69,13 @@ def parse_segment(segment, allow_return = False):
                 return VarDeclr(var_name, Constant(int(expr)), var_type == "var")
             if is_string(expr):
                 return VarDeclr(var_name, Constant(expr), var_type == "var")
+
+            # Detect function call: name followed by ()
+            if expr.endswith("()") and expr[:-2].isidentifier():
+                func_name = expr[:-2]
+                return VarDeclr(var_name, FuncCall(func_name, []), var_type == "var")
+
+            # Variable reference
             if expr.isidentifier():
                 return VarDeclr(var_name, VariableRefrence(expr), var_type == "var")
 
@@ -162,15 +169,25 @@ def parse_segment(segment, allow_return = False):
             args_raw.append("".join(arg))
 
         args = []
-        for a in args_raw:
-            if a.isnumeric():
-                args.append(Constant(int(a)))
-                continue
-            if is_string(a):
-                args.append(Constant(a))
-                continue
+        if end - (start + 1) > 0:
+            args_raw, arg = [], []
+            for i in range(start + 1, end):
+                if segment[i] == BASIC_KEYWORDS[8]:  # if ","
+                    args_raw.append("".join(arg))
+                    arg = []
+                else:
+                    arg.append(segment[i])
+            else:
+                if arg:
+                    args_raw.append("".join(arg))
 
-            args.append(parse_expression(get_tokens(a)))
+            for a in args_raw:
+                if a.isnumeric():
+                    args.append(Constant(int(a)))
+                elif is_string(a):
+                    args.append(Constant(a))
+                elif a.strip():
+                    args.append(parse_expression(get_tokens(a)))
 
         return FuncCall(func_name, args)
 
