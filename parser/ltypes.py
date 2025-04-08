@@ -25,15 +25,17 @@ class Constant:
                 .replace('"', "", 1).replace("'", "", 1)[::-1]
         return self._value
 
+    @property
+    def type(self) -> str:
+        return type(self.value).__name__
+
     def __str__(self):
         return f"c: {self.value}"
 
+@auto_str()
 class VariableRefrence:
     def __init__(self, ref):
         self.value = ref
-
-    def __str__(self):
-        return f"v: {self.value}"
 
 class BinaryOP:
     def __init__(self, left: Constant | VariableRefrence | Optional["BinaryOP"], right: Constant | VariableRefrence | Optional["BinaryOP"], operator):
@@ -60,13 +62,27 @@ class VarDeclr:
         return f"Var: {self.name};{str(self.value)};{self.is_mutable}"
 
 @auto_str()
+class Scope:
+    def __init__(self):
+        self.variables: List[VarDeclr] = []
+        self.functions: List[FuncDeclr] = []
+
+    def declare_variable(self, var):
+        self.variables.append(var)
+
+    def declare_func(self, func):
+        self.functions.append(func)
+
+
+@auto_str()
 class FuncDeclr:
-    def __init__(self, name, return_type, args, elements, return_modifier):
+    def __init__(self, name, return_type, args, elements, return_modifier, scope):
         self.name = name
         self.return_type = return_type
         self.elements = elements
         self.args: List[FuncArg] = args
         self.return_modifier = return_modifier
+        self.scope = scope
 
 @auto_str()
 class FuncArg:
@@ -74,8 +90,22 @@ class FuncArg:
         self.name = name
         self.tpe = tpe
 
-
-
+@auto_str()
 class ReturnValue:
     def __init__(self, v):
         self.value = v
+
+@auto_str()
+class ReassignVariable:
+    def __init__(self, var_name, value):
+        self.var = var_name
+        self.value = value
+
+@auto_str()
+class UnaryOP:
+    def __init__(self, operand, operator):
+        self.operand = operand
+        self.operator = operator
+
+class EmptyOP:
+    ...
