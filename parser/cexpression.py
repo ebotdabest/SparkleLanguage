@@ -3,7 +3,8 @@ from .ltypes import Constant, VariableRefrence
 from utils import is_string
 from lexer.token import PRECEDENCE, BASIC_KEYWORDS
 from lexer.lexer import get_tokens
-from .ltypes import BinaryOP, UnaryOP, FuncCall, EmptyOP
+from .ltypes import BinaryOP, UnaryOP, FuncCall, EmptyOP, StringOP
+from copy import deepcopy
 
 def get_segments(tokens: List[str]):
     """
@@ -72,15 +73,33 @@ def parse_primary(tokens):
     if is_string(tok):
         return Constant(tok)
 
-    if len(tokens) != 0 and tokens[-1] == BASIC_KEYWORDS[7]:
+    if tokens and tokens[0] == "(":
         func_name = tok
+        tokens.pop(0)  # remove '('
+        args = []
+        current_arg = []
+        paren_depth = 0
 
-        args_formatted = []
-        for argi in range(1, len(tokens) - 1, 2):
-            args_formatted.append(parse_expression(get_tokens(tokens[argi])))
+        while tokens:
+            tok = tokens.pop(0)
+            if tok == "(":
+                paren_depth += 1
+                current_arg.append(tok)
+            elif tok == ")":
+                if paren_depth == 0:
+                    if current_arg:
+                        args.append(parse_expression(current_arg))
+                    break
+                else:
+                    paren_depth -= 1
+                    current_arg.append(tok)
+            elif tok == "," and paren_depth == 0:
+                args.append(parse_expression(current_arg))
+                current_arg = []
+            else:
+                current_arg.append(tok)
 
-        return FuncCall(func_name, args_formatted)
-
+        return FuncCall(func_name, args)
 
     return VariableRefrence(tok)
 
@@ -93,6 +112,23 @@ def parse_expression(tokens, min_precedence=0):
     """
 
     lhs = parse_primary(tokens)
+    tokens_copy = deepcopy(tokens)
+    if isinstance(lhs, Constant):
+        if lhs.type == "str":
+            while tokens:
+                op = tokens.pop(0)
+                rhs = parse_expression(tokens, min_precedence + 1)
+                lhs = StringOP(lhs, rhs, op)
+            return lhs
+    elif isinstance(lhs, VariableRefrence):
+        while tokens:
+            op = tokens.pop(0)
+            rhs = parse_expression(tokens, min_precedence + 1)
+            if isinstance(rhs, Constant):
+                if rhs.type == "str":
+                    return StringOP(lhs, rhs, op)
+
+    tokens = tokens_copy[1:]
 
     while tokens and tokens[0] in PRECEDENCE and PRECEDENCE[tokens[0]] >= min_precedence:
         op = tokens.pop(0)

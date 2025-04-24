@@ -146,13 +146,12 @@ def parse_segment(segment, allow_return = False, lscope: Scope = None, gscope: S
         return ReassignVariable(var_name, value)
     else:
         func_name = segment[0]
-        start, end = 1, 0
+        start, end = 1, -2
 
         arg_tokens = []
         nested_level = 0
         current_arg = []
-
-        for token in segment[start + 1:end]:
+        for token in segment[start + 1:-1]:
             if token == '(':
                 nested_level += 1
             elif token == ')':

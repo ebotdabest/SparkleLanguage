@@ -109,3 +109,10 @@ class UnaryOP:
 
 class EmptyOP:
     ...
+
+@auto_str()
+class StringOP:
+    def __init__(self, lhs, rhs, op):
+        self.lhs = lhs
+        self.rhs = rhs
+        self.op = op

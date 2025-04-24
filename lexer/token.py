@@ -32,13 +32,14 @@ VARIABLE_DECLARTOR = ["var"]
 MUTABLE_DECLATOR = ["const"]
 
 BUILTIN_TYPES = [
-    "stringstr",
-    "stringchar",
+    "str",
+    "char",
     "int"
 ]
 
 RETURN_MODIFIERS = [
-    "useless"
+    "useless",
+    "extern"
 ]
 
 
