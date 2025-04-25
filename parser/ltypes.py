@@ -116,3 +116,4 @@ class StringOP:
         self.lhs = lhs
         self.rhs = rhs
         self.op = op
+

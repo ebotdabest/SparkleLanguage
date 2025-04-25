@@ -2,6 +2,9 @@
 #include <iostream>
 #include "backlightstr.h"
 #include <sstream>
+#include <cstdarg>
+#include <string>
+
 
 #define EXPORT __declspec(dllexport)
 
@@ -37,7 +40,7 @@ extern "C" {
     }
 
     EXPORT const char* __backlight_string_content(BacklightStringHandle handle) {
-        return static_cast<BacklightString*>(handle)->content;
+        return static_cast<BacklightString*>(handle)->getContent();
     }
 
     EXPORT const char* __backlight_number_string(int number) {
@@ -47,10 +50,45 @@ extern "C" {
 
         char* cstr = (char*)malloc(result.size() + 1);
         
-        strcpy_s(cstr, sizeof(result.c_str()), result.c_str());
+        strcpy_s(cstr, result.size() + 1, result.c_str());
         return cstr;
     }
 
+    EXPORT const char* __backlight_generate_string_array(char chars, ...) {
+        va_list args;
+        va_start(args, chars);
+
+        std::string result;
+        result.reserve(chars);
+
+        for (int i = 0; i < chars; ++i) {
+            char c = static_cast<char>(va_arg(args, int));
+            result += c;
+        }
+
+        va_end(args);
+
+        return _strdup(result.c_str());
+    }
+    
+    EXPORT BacklightStringHandle __backlight_string_format(BacklightStringHandle chars, ...) {
+        va_list args;
+        va_start(args, chars);
+
+        std::vector<BacklightString*> strings;
+        int i = 0;
+        while (i < 3) {
+            i++;
+            BacklightStringHandle arg = va_arg(args, BacklightStringHandle);
+            if (arg == nullptr) {
+                break;
+            }
+            strings.push_back(static_cast<BacklightString*>(arg));
+        }
+        BacklightString str = static_cast<BacklightString*>(chars)->format(strings);
+        va_end(args);
+        return new BacklightString(str.getContent());
+    }
 
 }
 

@@ -16,8 +16,21 @@ def get_segments(tokens: List[str]):
     segment = []
     depth = 0
 
-    for t in tokens:
-        if t == '{':
+    skip = False
+
+    i = 0
+    while i < len(tokens):
+        t = tokens[i]
+        if skip:
+            if t == '*/':
+                skip = False
+            i += 1
+            continue
+        elif t == '/*':
+            skip = True
+            i += 1
+            continue
+        elif t == '{':
             depth += 1
             segment.append(t)
         elif t == '}':
@@ -33,27 +46,17 @@ def get_segments(tokens: List[str]):
                 segment = []
         else:
             segment.append(t)
+        i += 1
 
     if segment:
         segments.append(segment)
 
     return segments
 
+
 def parse_primary(tokens):
-    """
-    Parses a primary expression, including:
-    - constants
-    - strings
-    - variables
-    - unary minus
-    - parentheses
-    :param tokens: list of tokens
-    :return: parsed expression node
-    """
     tok = tokens.pop(0)
 
-
-    # Handle parenthesized expressions
     if tok == '(':
         expr = parse_expression(tokens)
         if not tokens or tokens.pop(0) != ')':
@@ -63,79 +66,65 @@ def parse_primary(tokens):
     if tok == '-':
         operand = parse_primary(tokens)
         return UnaryOP(operand, '-')
-    elif tok == "+":
+    elif tok == '+':
         operand = parse_primary(tokens)
         return UnaryOP(operand, '+')
 
     if tok.isdigit():
-        return Constant(int(tok))
+        node = Constant(int(tok))
+    elif is_string(tok):
+        node = Constant(tok)
+    else:
+        node = VariableRefrence(tok)
 
-    if is_string(tok):
-        return Constant(tok)
+    while tokens and tokens[0] == '.':
+        tokens.pop(0)
+        if not tokens:
+            raise SyntaxError("Expected attribute/method name after '.'")
 
-    if tokens and tokens[0] == "(":
-        func_name = tok
-        tokens.pop(0)  # remove '('
-        args = []
-        current_arg = []
-        paren_depth = 0
+        attr = tokens.pop(0)
 
-        while tokens:
-            tok = tokens.pop(0)
-            if tok == "(":
-                paren_depth += 1
-                current_arg.append(tok)
-            elif tok == ")":
-                if paren_depth == 0:
-                    if current_arg:
-                        args.append(parse_expression(current_arg))
-                    break
-                else:
-                    paren_depth -= 1
+        if tokens and tokens[0] == '(':
+            tokens.pop(0)
+            args = []
+            current_arg = []
+            paren_depth = 0
+            while tokens:
+                tok = tokens.pop(0)
+                if tok == '(':
+                    paren_depth += 1
                     current_arg.append(tok)
-            elif tok == "," and paren_depth == 0:
-                args.append(parse_expression(current_arg))
-                current_arg = []
-            else:
-                current_arg.append(tok)
+                elif tok == ')':
+                    if paren_depth == 0:
+                        if current_arg:
+                            args.append(parse_expression(current_arg))
+                        break
+                    else:
+                        paren_depth -= 1
+                        current_arg.append(tok)
+                elif tok == ',' and paren_depth == 0:
+                    args.append(parse_expression(current_arg))
+                    current_arg = []
+                else:
+                    current_arg.append(tok)
+            node = FuncCall(attr, [node] + args)
 
-        return FuncCall(func_name, args)
+    return node
 
-    return VariableRefrence(tok)
 
 def parse_expression(tokens, min_precedence=0):
-    """
-    Can parse expressions mainly mathematical
-    :param tokens:
-    :param min_precedence:
-    :return:
-    """
-
     lhs = parse_primary(tokens)
-    tokens_copy = deepcopy(tokens)
-    if isinstance(lhs, Constant):
-        if lhs.type == "str":
-            while tokens:
-                op = tokens.pop(0)
-                rhs = parse_expression(tokens, min_precedence + 1)
-                lhs = StringOP(lhs, rhs, op)
-            return lhs
-    elif isinstance(lhs, VariableRefrence):
-        while tokens:
-            op = tokens.pop(0)
-            rhs = parse_expression(tokens, min_precedence + 1)
-            if isinstance(rhs, Constant):
-                if rhs.type == "str":
-                    return StringOP(lhs, rhs, op)
-
-    tokens = tokens_copy[1:]
 
     while tokens and tokens[0] in PRECEDENCE and PRECEDENCE[tokens[0]] >= min_precedence:
         op = tokens.pop(0)
         precedence = PRECEDENCE[op]
-
         rhs = parse_expression(tokens, precedence + 1)
 
-        lhs = BinaryOP(lhs, rhs, op)
+        if isinstance(lhs, Constant) and lhs.type == "str":
+            lhs = StringOP(lhs, rhs, op)
+        elif isinstance(rhs, Constant) and rhs.type == "str":
+            lhs = StringOP(lhs, rhs, op)
+        else:
+            lhs = BinaryOP(lhs, rhs, op)
 
     return lhs

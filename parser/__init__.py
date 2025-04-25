@@ -1,14 +1,13 @@
 from lexer.token import VARIABLE_SHIT, BUILTIN_TYPES, OTHER_KEYWORDS, BASIC_KEYWORDS
 from .ltypes import *
 from .error import ParseError
-from lexer.lexer import get_tokens
 from .cexpression import *
-from typing import List, Dict
+from typing import List
 
 
 def parse_segment(segment, allow_return = False, lscope: Scope = None, gscope: Scope = None, runner=None):
     if segment[0] in VARIABLE_SHIT:
-        # Defining a variable, handles scope as a hint
+
         var_type = segment[0]
         var_name = segment[1]
         if lscope:
@@ -56,7 +55,6 @@ def parse_segment(segment, allow_return = False, lscope: Scope = None, gscope: S
             gscope.declare_variable(declr)
         return declr
     elif segment[0] in BUILTIN_TYPES or segment == OTHER_KEYWORDS[0]:
-        # Creating a function
         func_type = segment[0]
         func_name = segment[1]
         args = []
@@ -114,21 +112,10 @@ def parse_segment(segment, allow_return = False, lscope: Scope = None, gscope: S
         expr_token = segment[1:len(segment)]
         expr = parse_expression(expr_token)
 
-        # if expr_token.isnumeric():
-        #     return ReturnValue(Constant(int(expr_token)))
-        #
-        # if is_string(expr_token):
-        #     return ReturnValue(Constant(expr_token))
-        #
-        # if expr_token.isidentifier():
-        #     return ReturnValue(VariableRefrence(expr_token))
-
-
         return ReturnValue(expr)
     elif segment[1] == "=":
         var_name = segment[0]
         if lscope:
-            # We are currently inside a function
             for v in lscope.variables:
                 if v.name == var_name and not v.is_mutable:
                     runner.stop(ParseError("Immutability detected opinion rejected"))
@@ -144,6 +131,8 @@ def parse_segment(segment, allow_return = False, lscope: Scope = None, gscope: S
         value = parse_expression(expression)
 
         return ReassignVariable(var_name, value)
+    elif segment[0] == "//":
+        return EmptyOP()
     else:
         func_name = segment[0]
         start, end = 1, -2
@@ -165,41 +154,7 @@ def parse_segment(segment, allow_return = False, lscope: Scope = None, gscope: S
             arg_tokens.append(current_arg)
 
         args = [parse_expression(arg) for arg in arg_tokens]
-        # for i in range(1, len(segment)):
-        #     if segment[i] == BASIC_KEYWORDS[7]:
-        #         end = i
-        #
-        # args_raw,arg = [], []
-        # for i in range(start + 1, end):
-        #     if segment[i] == BASIC_KEYWORDS[8]:
-        #         args_raw.append("".join(arg))
-        #         arg = []
-        #     else:
-        #         arg.append(segment[i])
-        # else:
-        #     args_raw.append("".join(arg))
-        #
-        # args = []
-        # if end - (start + 1) > 0:
-        #     args_raw, arg = [], []
-        #     for i in range(start + 1, end):
-        #         if segment[i] == BASIC_KEYWORDS[8]:  # if ","
-        #             args_raw.append("".join(arg))
-        #             arg = []
-        #         else:
-        #             arg.append(segment[i])
-        #     else:
-        #         if arg:
-        #             args_raw.append("".join(arg))
-        #
-        #     for a in args_raw:
-        #         if a.isnumeric():
-        #             args.append(Constant(int(a)))
-        #         elif is_string(a):
-        #             args.append(Constant(a))
-        #         elif a.strip():
-        #             args.append(parse_expression(get_tokens(a)))
-        #
+
         return FuncCall(func_name, args)
 
 class SegmentRunnerUntilError:
